@@ -4,10 +4,11 @@
 // Estos datos no son secretos: lo que protege tu información son las reglas de Firestore (firestore.rules).
 
 export const firebaseConfig = {
-  apiKey: "PEGA_AQUI_TU_API_KEY",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000"
+  apiKey: "AIzaSyBEeVMpH_hCMbleFOq1wDDvtjXaYBlrC_w",
+  authDomain: "torneo-tenis-mesa.firebaseapp.com",
+  projectId: "torneo-tenis-mesa",
+  storageBucket: "torneo-tenis-mesa.firebasestorage.app",
+  messagingSenderId: "161034002935",
+  appId: "1:161034002935:web:ee1bda7d2c6027b4ec4ef2",
+  measurementId: "G-BXDS3R864Q"
 };
