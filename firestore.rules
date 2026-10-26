@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Correos de las personas que pueden anotar resultados y editar datos.
+    // Escríbelos en minúsculas, entre comillas y separados por comas.
+    function esOrganizador() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'correo-organizador@gmail.com'
+        ];
+    }
+
+    // Lista de jugadores y torneo en curso: todos leen, solo organizadores escriben.
+    match /club/{docId} {
+      allow read: if true;
+      allow write: if esOrganizador();
+    }
+
+    // Historial de torneos: todos leen, solo organizadores escriben.
+    match /history/{docId} {
+      allow read: if true;
+      allow write: if esOrganizador();
+    }
+
+    // Cualquier otra ruta queda cerrada.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
