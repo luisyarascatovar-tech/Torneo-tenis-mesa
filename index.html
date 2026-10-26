@@ -245,14 +245,14 @@ body.proj td{padding:10px 8px}
 
       <div class="grid2">
         <section class="card">
-          <h2>Sets por partido</h2>
+          <h2>Formato de cada partido</h2>
           <div class="field">
-            <label for="sets" id="setsLabel">Cantidad de sets</label>
+            <label for="sets" id="setsLabel">Cada partido se juega</label>
             <select id="sets">
-              <option value="1">1 set</option>
-              <option value="3" selected>3 sets (gana quien llegue a 2)</option>
-              <option value="5">5 sets (gana quien llegue a 3)</option>
-              <option value="7">7 sets (gana quien llegue a 4)</option>
+              <option value="1">A 1 set</option>
+              <option value="3" selected>Al mejor de 3 sets (gana quien gane 2)</option>
+              <option value="5">Al mejor de 5 sets (gana quien gane 3)</option>
+              <option value="7">Al mejor de 7 sets (gana quien gane 4)</option>
             </select>
           </div>
           <div class="field">
@@ -532,7 +532,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     const p = isPairs(), ser = p && fmtSel.value !== 'dobles';
     $('formatField').hidden = !p;
     $('pairsCard').hidden = !p;
-    $('setsLabel').textContent = ser ? 'Sets de cada partido de la serie' : 'Cantidad de sets';
+    $('setsLabel').textContent = ser ? 'Cada partido de la serie se juega' : 'Cada partido se juega';
     $('modeLabel').textContent = ser ? '¿Cómo quieres anotar cada partido de la serie?' : '¿Cómo quieres anotar los resultados?';
     renderPairs();
   }
@@ -662,6 +662,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
 
   /* ---------- Resultados ---------- */
   const need = t => Math.floor(t.sets / 2) + 1;
+  const bestOf = n => n === 1 ? 'a 1 set' : 'al mejor de ' + n + ' sets';
   const rawRes = (t, i) => (t.results || {})[i] || (t.results || {})[String(i)] || {};
   const cleanGame = g => ({w: g && (g.w === 0 || g.w === 1) ? g.w : null, s: g && Array.isArray(g.s) ? g.s.slice() : []});
 
@@ -760,9 +761,9 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     const pairs = t.kind === 'parejas';
     const items = pairs
       ? [['Modalidad', 'Parejas · ' + (FORMAT_LABEL[t.format] || 'Dobles')], ['Parejas', t.teams.length], [seriesOf(t) ? 'Series' : 'Partidos', t.matches.length], ['Jugados', played],
-         ['Rondas', t.rounds.length], ['Turnos', t.turns], ['Mesas', t.tables], ['Sets por partido', t.sets]]
+         ['Rondas', t.rounds.length], ['Turnos', t.turns], ['Mesas', t.tables], ['Cada partido', bestOf(t.sets)]]
       : [['Jugadores', t.players.length], ['Partidos', t.matches.length], ['Jugados', played],
-         ['Rondas', t.rounds.length], ['Turnos', t.turns], ['Mesas', t.tables], ['Sets por partido', t.sets]];
+         ['Rondas', t.rounds.length], ['Turnos', t.turns], ['Mesas', t.tables], ['Cada partido', bestOf(t.sets)]];
     for (const [k, v] of items){ const c = el('span', 'chip'); c.append(k + ': '); c.append(el('b', null, String(v))); box.append(c); }
     const sb = $('saveTour');
     sb.disabled = !!t.savedId || !S.db;
@@ -1182,7 +1183,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
       const tw = el('div', 'tablewrap'), tb = el('table');
       buildTable(tb, h.standings || [], {scores: h.mode === 'scores', series: hs, pairs: hp});
       tw.append(tb); body.append(tw);
-      body.append(el('p', 'legend', (h.sets === 1 ? '1 set' : h.sets + ' sets') + ' por partido · ' + (h.mode === 'scores' ? 'con marcadores' : 'resultado final') + ' · ' + h.tables + (h.tables === 1 ? ' mesa' : ' mesas')));
+      body.append(el('p', 'legend', 'Partidos ' + bestOf(h.sets) + ' · ' + (h.mode === 'scores' ? 'con marcadores' : 'resultado final') + ' · ' + h.tables + (h.tables === 1 ? ' mesa' : ' mesas')));
       d.append(body);
       const item = el('div', 'hitem');
       item.append(d);
