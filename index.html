@@ -102,6 +102,16 @@ textarea:focus-visible,select:focus-visible,input:focus-visible,button:focus-vis
 .set .boxes{display:flex;align-items:center;gap:3px}
 .sc{width:2.4em;padding:4px 2px;text-align:center;font-variant-numeric:tabular-nums}
 .sc.bad{border-color:var(--warn);background:var(--warn-bg)}
+.pairs{display:flex;flex-direction:column;gap:8px}
+.pairrow{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px;align-items:center}
+.pairrow select{padding:7px 8px;min-width:0}
+.pairlbl{font-size:.8rem;font-weight:600;color:var(--muted);white-space:nowrap}
+@media (max-width:520px){.pairrow{grid-template-columns:1fr 1fr}.pairlbl{grid-column:1/2}.pairrow .btn{grid-column:2/3;grid-row:1;justify-self:end}}
+.matches.series .tgrid{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.subs{display:flex;flex-direction:column;gap:8px;flex-basis:100%}
+.subgame{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
+.sublbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.sscore{margin-left:auto;font-size:.8rem;font-weight:700;background:var(--soft);border-radius:999px;padding:2px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .mnote{flex-basis:100%;font-size:.78rem;color:var(--warn);margin:0}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{font:inherit;font-size:.82rem;font-weight:600;background:var(--card);color:var(--muted);border:0;padding:6px 12px;cursor:pointer}
@@ -183,7 +193,28 @@ body.proj td{padding:10px 8px}
   <div id="view-torneo" class="wrap" style="max-width:none;width:100%">
     <div id="config" class="wrap noproj" style="max-width:none;width:100%">
       <section class="card">
-        <h2>1. Participantes</h2>
+        <h2>Modalidad</h2>
+        <div class="grid2">
+          <div class="field">
+            <label for="kind">Tipo de torneo</label>
+            <select id="kind">
+              <option value="individual" selected>Individual</option>
+              <option value="parejas">Por equipos (parejas)</option>
+            </select>
+          </div>
+          <div class="field" id="formatField" hidden>
+            <label for="format">Cada enfrentamiento entre parejas</label>
+            <select id="format">
+              <option value="dobles" selected>Un partido de dobles</option>
+              <option value="s3">Serie de 3: 2 individuales + 1 dobles (gana quien gane 2)</option>
+              <option value="s5">Serie de 5: 4 individuales + 1 dobles (gana quien gane 3)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Participantes</h2>
         <h3>Jugadores del club</h3>
         <div class="row">
           <button class="btn sm ghost" id="selAll" type="button">Seleccionar todos</button>
@@ -201,11 +232,22 @@ body.proj td{padding:10px 8px}
         <p class="hint" id="count">0 participantes</p>
       </section>
 
+      <section class="card" id="pairsCard" hidden>
+        <h2>Parejas</h2>
+        <p class="hint">Arma las parejas con los participantes elegidos, o sortéalas al azar. En las series, el jugador 1 de cada pareja juega el Individual 1 y el jugador 2 el Individual 2.</p>
+        <div class="row">
+          <button class="btn sm" id="drawPairs" type="button">Sortear parejas</button>
+          <button class="btn sm ghost" id="addPair" type="button">Agregar pareja</button>
+        </div>
+        <div class="pairs" id="pairsList"></div>
+        <p class="hint" id="pairsNote"></p>
+      </section>
+
       <div class="grid2">
         <section class="card">
-          <h2>2. Sets por partido</h2>
+          <h2>Sets por partido</h2>
           <div class="field">
-            <label for="sets">Cantidad de sets</label>
+            <label for="sets" id="setsLabel">Cantidad de sets</label>
             <select id="sets">
               <option value="1">1 set</option>
               <option value="3" selected>3 sets (gana quien llegue a 2)</option>
@@ -214,7 +256,7 @@ body.proj td{padding:10px 8px}
             </select>
           </div>
           <div class="field">
-            <label for="mode">¿Cómo quieres anotar los resultados?</label>
+            <label for="mode" id="modeLabel">¿Cómo quieres anotar los resultados?</label>
             <select id="mode">
               <option value="final" selected>Resultado final del partido</option>
               <option value="scores">Anotar marcadores</option>
@@ -222,7 +264,7 @@ body.proj td{padding:10px 8px}
           </div>
         </section>
         <section class="card">
-          <h2>3. Mesas disponibles</h2>
+          <h2>Mesas disponibles</h2>
           <div class="field">
             <label for="tables">Mesas que se pueden usar a la vez</label>
             <input class="num" id="tables" type="number" min="1" value="2" inputmode="numeric">
@@ -286,7 +328,13 @@ body.proj td{padding:10px 8px}
 
   <!-- ============ RANKING ============ -->
   <section id="view-ranking" class="card" hidden>
-    <h2>Ranking acumulado</h2>
+    <div class="hhead">
+      <h2>Ranking acumulado</h2>
+      <div class="seg" role="group" aria-label="Tipo de ranking">
+        <button type="button" id="rank-individual-btn" aria-pressed="true">Individual</button>
+        <button type="button" id="rank-parejas-btn" aria-pressed="false">Parejas</button>
+      </div>
+    </div>
     <div class="tablewrap"><table id="rankTable"></table></div>
     <p class="empty" id="rankEmpty">Todavía no hay torneos guardados. Al terminar un torneo pulsa "Guardar en el historial" y aquí se sumarán los resultados.</p>
     <p class="legend">TJ: torneos jugados · Tít: títulos (1.er lugar en torneos completos) · PJ: partidos jugados · PG: partidos ganados · %V: porcentaje de victorias · Pts: puntos acumulados (victoria = 2, derrota = 1).</p>
@@ -365,6 +413,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
   function updateCount(){
     const n = getPlayers().length;
     $('count').textContent = n + (n === 1 ? ' participante' : ' participantes');
+    if (typeof renderPairs === 'function') renderPairs();
   }
 
   const ta = $('players');
@@ -466,6 +515,74 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     renderHistory();
   }
 
+  /* ---------- Modalidad y parejas ---------- */
+  S.pairs = [];
+  const kindSel = $('kind'), fmtSel = $('format');
+  const isPairs = () => kindSel.value === 'parejas';
+  const FORMAT_LABEL = {dobles: 'Dobles', s3: 'Serie de 3', s5: 'Serie de 5'};
+  const SERIES = {
+    s3: {need: 2, games: [{t: 'I', a: 0, b: 0}, {t: 'I', a: 1, b: 1}, {t: 'D'}]},
+    s5: {need: 3, games: [{t: 'I', a: 0, b: 0}, {t: 'I', a: 1, b: 1}, {t: 'D'}, {t: 'I', a: 0, b: 1}, {t: 'I', a: 1, b: 0}]}
+  };
+  const seriesOf = t => t && t.kind === 'parejas' ? (SERIES[t.format] || null) : null;
+  const entrants = t => t.kind === 'parejas' ? (t.teams || []).map(x => x.name) : t.players;
+  const matchWord = t => seriesOf(t) ? 'Serie' : 'Partido';
+
+  function syncKindUI(){
+    const p = isPairs(), ser = p && fmtSel.value !== 'dobles';
+    $('formatField').hidden = !p;
+    $('pairsCard').hidden = !p;
+    $('setsLabel').textContent = ser ? 'Sets de cada partido de la serie' : 'Cantidad de sets';
+    $('modeLabel').textContent = ser ? '¿Cómo quieres anotar cada partido de la serie?' : '¿Cómo quieres anotar los resultados?';
+    renderPairs();
+  }
+  kindSel.addEventListener('change', syncKindUI);
+  fmtSel.addEventListener('change', syncKindUI);
+
+  function renderPairs(){
+    if (!isPairs()) return;
+    const pool = getPlayers();
+    const inPool = new Set(pool.map(key));
+    S.pairs = S.pairs.map(p => p.map(n => n && inPool.has(key(n)) ? n : ''));
+    const used = new Set();
+    S.pairs.forEach(p => p.forEach(n => { if (n) used.add(key(n)); }));
+    const box = $('pairsList');
+    box.replaceChildren();
+    S.pairs.forEach((p, pi) => {
+      const row = el('div', 'pairrow');
+      row.append(el('span', 'pairlbl', 'Pareja ' + (pi + 1)));
+      [0, 1].forEach(side => {
+        const sel = el('select');
+        sel.id = 'pair' + pi + '_' + side;
+        sel.setAttribute('aria-label', 'Pareja ' + (pi + 1) + ', jugador ' + (side + 1));
+        const o0 = el('option', null, 'Jugador ' + (side + 1)); o0.value = ''; sel.append(o0);
+        pool.forEach(n => {
+          if (used.has(key(n)) && key(n) !== key(p[side] || '')) return;
+          const o = el('option', null, n); o.value = n; sel.append(o);
+        });
+        sel.value = p[side] || '';
+        sel.addEventListener('change', () => { S.pairs[pi][side] = sel.value; renderPairs(); });
+        row.append(sel);
+      });
+      const x = el('button', 'btn sm ghost', 'Quitar'); x.type = 'button';
+      x.setAttribute('aria-label', 'Quitar pareja ' + (pi + 1));
+      x.addEventListener('click', () => { S.pairs.splice(pi, 1); renderPairs(); });
+      row.append(x);
+      box.append(row);
+    });
+    const free = pool.filter(n => !used.has(key(n)));
+    $('pairsNote').textContent = !pool.length ? 'Primero elige los participantes arriba.'
+      : free.length ? 'Sin pareja: ' + free.join(', ') + '.' : 'Todos los participantes tienen pareja.';
+  }
+  $('addPair').addEventListener('click', () => { S.pairs.push(['', '']); renderPairs(); });
+  $('drawPairs').addEventListener('click', () => {
+    const pool = getPlayers().slice();
+    for (let i = pool.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    S.pairs = [];
+    for (let i = 0; i + 1 < pool.length; i += 2) S.pairs.push([pool[i], pool[i + 1]]);
+    renderPairs();
+  });
+
   /* ---------- Calendario ---------- */
   function roundRobin(players){
     const arr = players.slice();
@@ -486,27 +603,42 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
   }
 
   function showError(msg){ const e = $('err'); e.textContent = msg; e.hidden = !msg; }
-  function hasResults(t){ return t && Object.values(t.results || {}).some(r => r && (r.w !== null && r.w !== undefined || (r.s || []).some(v => v !== ''))); }
+  const gameHas = g => g && ((g.w === 0 || g.w === 1) || (Array.isArray(g.s) && g.s.some(v => v !== '')));
+  function hasResults(t){ return t && Object.values(t.results || {}).some(r => gameHas(r) || (r && Array.isArray(r.g) && r.g.some(gameHas))); }
+
+  function validateSetup(){
+    const tables = parseInt($('tables').value, 10);
+    if (!Number.isFinite(tables) || tables < 1) return 'Indica al menos 1 mesa disponible.';
+    if (!isPairs()) return getPlayers().length < 2 ? 'Agrega al menos 2 participantes para generar el calendario.' : '';
+    const bad = S.pairs.findIndex(p => (p[0] && !p[1]) || (!p[0] && p[1]));
+    if (bad >= 0) return 'Completa o quita la pareja ' + (bad + 1) + '.';
+    if (S.pairs.filter(p => p[0] && p[1]).length < 2) return 'Arma al menos 2 parejas completas para generar el calendario.';
+    return '';
+  }
 
   $('gen').addEventListener('click', () => {
-    const players = getPlayers();
-    const tables = parseInt($('tables').value, 10);
-    if (players.length < 2){ showError('Agrega al menos 2 participantes para generar el calendario.'); return; }
-    if (!Number.isFinite(tables) || tables < 1){ showError('Indica al menos 1 mesa disponible.'); return; }
-    showError('');
+    const err = validateSetup();
+    showError(err);
+    if (err) return;
     if (hasResults(S.tour) && !S.tour.savedId){ $('genConfirm').hidden = false; return; }
-    generate(players, tables);
+    generate();
   });
   $('genNo').addEventListener('click', () => { $('genConfirm').hidden = true; });
-  $('genYes').addEventListener('click', () => {
-    $('genConfirm').hidden = true;
-    generate(getPlayers(), parseInt($('tables').value, 10));
-  });
+  $('genYes').addEventListener('click', () => { $('genConfirm').hidden = true; generate(); });
 
-  function generate(players, tables){
+  function generate(){
+    const tables = parseInt($('tables').value, 10);
     const sets = parseInt($('sets').value, 10);
     const mode = $('mode').value;
-    const rr = roundRobin(players);
+    const kind = isPairs() ? 'parejas' : 'individual';
+    let players, teams = null, format = null;
+    if (kind === 'parejas'){
+      const full = S.pairs.filter(p => p[0] && p[1]);
+      teams = full.map(p => ({name: p[0] + ' / ' + p[1], p: [p[0], p[1]]}));
+      players = full.flat();
+      format = fmtSel.value;
+    } else players = getPlayers();
+    const rr = roundRobin(kind === 'parejas' ? teams.map(x => x.name) : players);
     const matches = [], rounds = [];
     let turns = 0;
     rr.forEach((r, ri) => {
@@ -520,7 +652,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     S.tour = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       createdAt: new Date().toISOString(),
-      players, tables, sets, mode, rounds, turns, matches,
+      kind, format, teams, players, tables, sets, mode, rounds, turns, matches,
       results: {}, savedId: null
     };
     if (S.db) write(() => S.db.doc('club/current').set(S.tour));
@@ -530,11 +662,25 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
 
   /* ---------- Resultados ---------- */
   const need = t => Math.floor(t.sets / 2) + 1;
-  function res(i){
-    const r = S.tour.results[i] || S.tour.results[String(i)];
-    return { w: r && r.w !== undefined ? r.w : null, s: r && Array.isArray(r.s) ? r.s.slice() : [] };
+  const rawRes = (t, i) => (t.results || {})[i] || (t.results || {})[String(i)] || {};
+  const cleanGame = g => ({w: g && (g.w === 0 || g.w === 1) ? g.w : null, s: g && Array.isArray(g.s) ? g.s.slice() : []});
+
+  function game(i, sub){
+    const r = rawRes(S.tour, i);
+    return cleanGame(sub == null ? r : (Array.isArray(r.g) ? r.g : [])[sub]);
   }
-  function setRes(i, r){ S.tour.results = Object.assign({}, S.tour.results, {[i]: r}); }
+  function setGame(i, sub, val){
+    let r;
+    if (sub == null) r = val;
+    else {
+      const cur = rawRes(S.tour, i);
+      const g = (Array.isArray(cur.g) ? cur.g : []).map(cleanGame);
+      while (g.length <= sub) g.push({w: null, s: []});
+      g[sub] = val;
+      r = {g};
+    }
+    S.tour.results = Object.assign({}, S.tour.results, {[i]: r});
+  }
 
   function setProblem(x, y){
     if (x === '' || y === '') return null;
@@ -547,11 +693,10 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     return null;
   }
 
-  function outcome(t, i){
-    const m = t.matches[i];
-    const r = (t.results || {})[i] || (t.results || {})[String(i)] || {};
-    if (t.mode === 'final') return {winner: r.w === 0 || r.w === 1 ? r.w : null, wa: 0, wb: 0, pa: 0, pb: 0};
-    const s = Array.isArray(r.s) ? r.s : [];
+  function gameOutcome(t, g){
+    g = g || {};
+    if (t.mode === 'final') return {winner: g.w === 0 || g.w === 1 ? g.w : null, wa: 0, wb: 0, pa: 0, pb: 0};
+    const s = Array.isArray(g.s) ? g.s : [];
     let wa = 0, wb = 0, pa = 0, pb = 0;
     const N = need(t);
     for (let k = 0; k < t.sets; k++){
@@ -566,6 +711,24 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     return {winner: wa >= N ? 0 : wb >= N ? 1 : null, wa, wb, pa, pb};
   }
 
+  // Resultado de un enfrentamiento. ga/gb = partidos ganados dentro de la serie.
+  function outcome(t, i){
+    const r = rawRes(t, i), ser = seriesOf(t);
+    if (!ser){
+      const o = gameOutcome(t, r);
+      o.ga = o.winner === 0 ? 1 : 0; o.gb = o.winner === 1 ? 1 : 0;
+      return o;
+    }
+    const gs = Array.isArray(r.g) ? r.g : [];
+    let ga = 0, gb = 0, wa = 0, wb = 0, pa = 0, pb = 0;
+    ser.games.forEach((_, k) => {
+      const o = gameOutcome(t, gs[k]);
+      wa += o.wa; wb += o.wb; pa += o.pa; pb += o.pb;
+      if (o.winner === 0) ga++; else if (o.winner === 1) gb++;
+    });
+    return {winner: ga >= ser.need ? 0 : gb >= ser.need ? 1 : null, ga, gb, wa, wb, pa, pb};
+  }
+
   function commit(i, delay){
     if (S.tour.mode === 'final') refreshRow(i);
     markDone(i);
@@ -575,13 +738,14 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     if (S.dirty.has(i)) clearTimeout(S.dirty.get(i));
     S.dirty.set(i, setTimeout(async () => {
       if (!S.tour || S.tour.id !== tourId){ S.dirty.delete(i); return; }
-      const r = res(i);
+      const r = JSON.parse(JSON.stringify(rawRes(S.tour, i)));
       await write(() => S.db.doc('club/current').update({['results.' + i]: r}));
       S.dirty.delete(i);
     }, delay));
   }
 
-  function refreshRow(i){ const f = rowRefreshers[i]; if (f) f(); }
+  function refreshRow(i){ (rowRefreshers[i] || []).forEach(f => f()); }
+  function addRefresher(i, f){ (rowRefreshers[i] = rowRefreshers[i] || []).push(f); }
 
   function renderTour(){
     $('results').hidden = !S.tour;
@@ -593,10 +757,12 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     const t = S.tour, box = $('summary');
     box.replaceChildren();
     const played = t.matches.filter((_, i) => outcome(t, i).winner !== null).length;
-    const items = [
-      ['Jugadores', t.players.length], ['Partidos', t.matches.length], ['Jugados', played],
-      ['Rondas', t.rounds.length], ['Turnos', t.turns], ['Mesas', t.tables], ['Sets por partido', t.sets]
-    ];
+    const pairs = t.kind === 'parejas';
+    const items = pairs
+      ? [['Modalidad', 'Parejas · ' + (FORMAT_LABEL[t.format] || 'Dobles')], ['Parejas', t.teams.length], [seriesOf(t) ? 'Series' : 'Partidos', t.matches.length], ['Jugados', played],
+         ['Rondas', t.rounds.length], ['Turnos', t.turns], ['Mesas', t.tables], ['Sets por partido', t.sets]]
+      : [['Jugadores', t.players.length], ['Partidos', t.matches.length], ['Jugados', played],
+         ['Rondas', t.rounds.length], ['Turnos', t.turns], ['Mesas', t.tables], ['Sets por partido', t.sets]];
     for (const [k, v] of items){ const c = el('span', 'chip'); c.append(k + ': '); c.append(el('b', null, String(v))); box.append(c); }
     const sb = $('saveTour');
     sb.disabled = !!t.savedId || !S.db;
@@ -618,15 +784,42 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     if (S.tour) renderMatches();
   }));
 
+  function vsLine(a, b){
+    const pair = el('div', 'pair');
+    pair.append(el('span', 'pname', a), el('span', 'vs', 'vs'), el('span', 'pname', b));
+    return pair;
+  }
+
   function matchBody(container, m, idx){
-    if (S.tour.mode === 'final') container.append(finalControls(m, idx));
-    else {
-      const pair = el('div', 'pair');
-      pair.append(el('span', 'pname', m.a), el('span', 'vs', 'vs'), el('span', 'pname', m.b));
-      container.append(pair);
-      scoreControls(container, m, idx);
+    const t = S.tour, ser = seriesOf(t);
+    let score = null;
+    if (!ser){
+      if (t.mode === 'final') container.append(finalControls(idx, null, m.a, m.b));
+      else { container.append(vsLine(m.a, m.b)); scoreControls(container, idx, null, m.a, m.b); }
+    } else {
+      const head = vsLine(m.a, m.b);
+      score = el('span', 'sscore');
+      head.append(score);
+      container.append(head);
+      const subs = el('div', 'subs');
+      const A = (t.teams.find(x => x.name === m.a) || {p: ['', '']}).p;
+      const B = (t.teams.find(x => x.name === m.b) || {p: ['', '']}).p;
+      let ind = 0;
+      ser.games.forEach((g, k) => {
+        const la = g.t === 'D' ? m.a : A[g.a], lb = g.t === 'D' ? m.b : B[g.b];
+        const sg = el('div', 'subgame');
+        sg.append(el('div', 'sublbl', g.t === 'D' ? 'Dobles' : 'Individual ' + (++ind)));
+        if (t.mode === 'final') sg.append(finalControls(idx, k, la, lb));
+        else { sg.append(vsLine(la, lb)); scoreControls(sg, idx, k, la, lb); }
+        subs.append(sg);
+      });
+      container.append(subs);
     }
-    doneMarkers[idx] = () => container.classList.toggle('done', outcome(S.tour, idx).winner !== null);
+    doneMarkers[idx] = () => {
+      const o = outcome(S.tour, idx);
+      container.classList.toggle('done', o.winner !== null);
+      if (score) score.textContent = 'Serie ' + o.ga + ' - ' + o.gb;
+    };
     markDone(idx);
   }
 
@@ -639,8 +832,9 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     $('view-mesas-btn').setAttribute('aria-pressed', String(useGrid));
     $('view-lista-btn').setAttribute('aria-pressed', String(!useGrid));
     list.classList.toggle('gridview', useGrid);
+    list.classList.toggle('series', !!seriesOf(t));
+    const word = matchWord(t);
 
-    // Agrupar por ronda y turno
     const rounds = [];
     t.matches.forEach((m, idx) => {
       let r = rounds[rounds.length - 1];
@@ -663,7 +857,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
             if (!it){ const empty = el('div', 'mcard free'); empty.append(el('div', 'mhead', 'Mesa ' + k), el('span', 'vs', 'Mesa libre')); grid.append(empty); continue; }
             const card = el('div', 'mcard');
             const head = el('div', 'mhead');
-            head.append(el('b', null, 'Mesa ' + k), el('span', null, 'Partido ' + (it.idx + 1)));
+            head.append(el('b', null, 'Mesa ' + k), el('span', null, word + ' ' + (it.idx + 1)));
             card.append(head);
             matchBody(card, it.m, it.idx);
             grid.append(card);
@@ -675,7 +869,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
         r.turns.forEach(tu => tu.items.forEach(({m, idx}) => {
           const li = el('li', 'match');
           const num = el('div', 'mnum');
-          num.append(el('b', null, 'Partido ' + (idx + 1)), el('span', null, 'Mesa ' + m.table + ' · Turno ' + m.turn));
+          num.append(el('b', null, word + ' ' + (idx + 1)), el('span', null, 'Mesa ' + m.table + ' · Turno ' + m.turn));
           li.append(num);
           matchBody(li, m, idx);
           list.append(li);
@@ -684,14 +878,14 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     });
   }
 
-  function finalControls(m, idx){
+  function finalControls(idx, sub, la, lb){
     const pair = el('div', 'pair');
-    const bA = el('button', 'pbtn', m.a), bB = el('button', 'pbtn', m.b);
+    const bA = el('button', 'pbtn', la), bB = el('button', 'pbtn', lb);
     bA.type = bB.type = 'button';
     const edit = el('button', 'edit', '✎');
     edit.type = 'button'; edit.title = 'Cambiar resultado'; edit.setAttribute('aria-label', 'Cambiar resultado');
     function paint(){
-      const w = res(idx).w;
+      const w = game(idx, sub).w;
       bA.className = 'pbtn' + (w === 0 ? ' win' : w === 1 ? ' lose' : '');
       bB.className = 'pbtn' + (w === 1 ? ' win' : w === 0 ? ' lose' : '');
       bA.disabled = bB.disabled = w !== null || !S.canWrite;
@@ -699,21 +893,22 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
       bB.setAttribute('aria-pressed', String(w === 1));
       edit.hidden = w === null || !S.canWrite;
     }
-    const pick = w => () => { if (res(idx).w === null){ setRes(idx, {w, s: []}); commit(idx, 0); edit.focus(); } };
+    const pick = w => () => { if (game(idx, sub).w === null){ setGame(idx, sub, {w, s: []}); commit(idx, 0); edit.focus(); } };
     bA.addEventListener('click', pick(0));
     bB.addEventListener('click', pick(1));
-    edit.addEventListener('click', () => { setRes(idx, {w: null, s: []}); commit(idx, 0); bA.focus(); });
-    rowRefreshers[idx] = paint;
+    edit.addEventListener('click', () => { setGame(idx, sub, {w: null, s: []}); commit(idx, 0); bA.focus(); });
+    addRefresher(idx, paint);
     pair.append(bA, el('span', 'vs', 'vs'), bB, edit);
     paint();
     return pair;
   }
 
-  function scoreControls(li, m, idx){
+  function scoreControls(container, idx, sub, la, lb){
     const t = S.tour;
     const wrap = el('div', 'sets');
     const note = el('p', 'mnote'); note.hidden = true;
     const inputs = [];
+    const idBase = 'm' + idx + (sub == null ? '' : 'g' + sub);
     for (let si = 0; si < t.sets; si++){
       const set = el('div', 'set');
       if (t.sets > 1) set.append(el('span', 'lbl', 'Set ' + (si + 1)));
@@ -721,16 +916,16 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
       [0, 1].forEach(side => {
         const inp = el('input', 'sc');
         inp.type = 'text'; inp.inputMode = 'numeric'; inp.pattern = '[0-9]*'; inp.maxLength = 2; inp.autocomplete = 'off';
-        inp.id = 'm' + idx + 's' + si + 'p' + side;
-        inp.setAttribute('aria-label', 'Set ' + (si + 1) + ', puntos de ' + (side ? m.b : m.a));
+        inp.id = idBase + 's' + si + 'p' + side;
+        inp.setAttribute('aria-label', 'Set ' + (si + 1) + ', puntos de ' + (side ? lb : la));
         inp.disabled = !S.canWrite;
         inp.addEventListener('input', () => {
           const clean = inp.value.replace(/\D/g, '').slice(0, 2);
           if (clean !== inp.value) inp.value = clean;
-          const r = res(idx);
-          while (r.s.length < t.sets * 2) r.s.push('');
-          r.s[si * 2 + side] = clean;
-          setRes(idx, {w: null, s: r.s});
+          const g = game(idx, sub);
+          while (g.s.length < t.sets * 2) g.s.push('');
+          g.s[si * 2 + side] = clean;
+          setGame(idx, sub, {w: null, s: g.s});
           validate();
           commit(idx, 600);
         });
@@ -742,7 +937,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
       wrap.append(set);
     }
     function validate(){
-      const s = res(idx).s, msgs = [];
+      const s = game(idx, sub).s, msgs = [];
       for (let si = 0; si < t.sets; si++){
         const p = setProblem(s[si * 2] ?? '', s[si * 2 + 1] ?? '');
         inputs[si * 2].classList.toggle('bad', !!p);
@@ -753,23 +948,24 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
       note.hidden = !msgs.length;
     }
     function paint(){
-      const s = res(idx).s;
+      const s = game(idx, sub).s;
       inputs.forEach((inp, k) => { if (document.activeElement !== inp) inp.value = s[k] ?? ''; inp.disabled = !S.canWrite; });
       validate();
     }
-    rowRefreshers[idx] = paint;
-    li.append(wrap, note);
+    addRefresher(idx, paint);
+    container.append(wrap, note);
     paint();
   }
 
   /* ---------- Tabla de posiciones ---------- */
   function computeTable(t){
     const rows = new Map();
-    t.players.forEach(p => rows.set(p, {name: p, pj: 0, pg: 0, sf: 0, sc: 0, pf: 0, pc: 0, pts: 0}));
+    entrants(t).forEach(p => rows.set(p, {name: p, pj: 0, pg: 0, gf: 0, gc: 0, sf: 0, sc: 0, pf: 0, pc: 0, pts: 0}));
     const done = [];
     t.matches.forEach((m, i) => {
       const o = outcome(t, i), A = rows.get(m.a), B = rows.get(m.b);
       if (!A || !B) return;
+      A.gf += o.ga; A.gc += o.gb; B.gf += o.gb; B.gc += o.ga;
       A.sf += o.wa; A.sc += o.wb; B.sf += o.wb; B.sc += o.wa;
       A.pf += o.pa; A.pc += o.pb; B.pf += o.pb; B.pc += o.pa;
       if (o.winner === null) return;
@@ -778,7 +974,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
       W.pg++; W.pts += 2; L.pts += 1;
       done.push({w: W.name, l: L.name});
     });
-    const base = (x, y) => ((y.sf - y.sc) - (x.sf - x.sc)) || ((y.pf - y.pc) - (x.pf - x.pc)) || x.name.localeCompare(y.name, 'es');
+    const base = (x, y) => ((y.gf - y.gc) - (x.gf - x.gc)) || ((y.sf - y.sc) - (x.sf - x.sc)) || ((y.pf - y.pc) - (x.pf - x.pc)) || x.name.localeCompare(y.name, 'es');
     const all = [...rows.values()].sort((x, y) => y.pts - x.pts);
     const out = [];
     for (let i = 0; i < all.length;){
@@ -795,9 +991,11 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     return {rows: out, played: done.length};
   }
 
-  function buildTable(table, rows, scores){
-    const cols = [['#', ''], ['Jugador', 'name'], ['PJ', ''], ['PG', '']];
-    if (scores) cols.push(['SF', ''], ['SC', '']);
+  // opts: {scores, series, pairs}
+  function buildTable(table, rows, opts){
+    const cols = [['#', ''], [opts.pairs ? 'Pareja' : 'Jugador', 'name'], ['PJ', ''], ['PG', '']];
+    if (opts.series) cols.push(['PF', ''], ['PC', '']);
+    if (opts.scores) cols.push(['SF', ''], ['SC', '']);
     cols.push(['Pts', '']);
     table.replaceChildren();
     const thead = el('thead'), hr = el('tr');
@@ -807,21 +1005,29 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     rows.forEach((r, i) => {
       const tr = el('tr', i === 0 && r.pts > 0 ? 'lead' : null);
       const vals = [i + 1, r.name, r.pj, r.pg];
-      if (scores) vals.push(r.sf, r.sc);
+      if (opts.series) vals.push(r.gf ?? 0, r.gc ?? 0);
+      if (opts.scores) vals.push(r.sf, r.sc);
       vals.push(r.pts);
       vals.forEach((v, ci) => tr.append(el('td', ci === 1 ? 'name' : null, String(v))));
       tbody.append(tr);
     });
     table.append(thead, tbody);
   }
+  const tableOpts = t => ({scores: t.mode === 'scores', series: !!seriesOf(t), pairs: t.kind === 'parejas'});
+
+  function legendText(t){
+    const o = tableOpts(t);
+    let s = 'PJ: ' + (o.series ? 'series jugadas · PG: series ganadas' : 'partidos jugados · PG: partidos ganados');
+    if (o.series) s += ' · PF/PC: partidos ganados/perdidos dentro de las series';
+    if (o.scores) s += ' · SF: sets a favor · SC: sets en contra';
+    s += ' · Pts: puntos. Victoria = 2 pts, derrota = 1 pt. Empate en puntos: primero el resultado entre los empatados, luego diferencia de ' + (o.series ? 'partidos, de sets' : 'sets') + ' y de puntos anotados.';
+    return s;
+  }
 
   function renderStandings(){
-    const t = S.tour, scores = t.mode === 'scores';
-    buildTable($('standings'), computeTable(t).rows, scores);
-    $('legend').textContent = (scores
-      ? 'PJ: partidos jugados · PG: partidos ganados · SF: sets a favor · SC: sets en contra · Pts: puntos. '
-      : 'PJ: partidos jugados · PG: partidos ganados · Pts: puntos. ')
-      + 'Victoria = 2 pts, derrota = 1 pt. Empate en puntos: primero el resultado entre los empatados, luego diferencia de sets y de puntos anotados.';
+    const t = S.tour;
+    buildTable($('standings'), computeTable(t).rows, tableOpts(t));
+    $('legend').textContent = legendText(t);
   }
 
   /* ---------- Guardar en el historial ---------- */
@@ -830,7 +1036,8 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     const {played} = computeTable(t);
     const left = t.matches.length - played;
     if (left > 0){
-      $('saveConfirmText').textContent = 'Faltan ' + left + (left === 1 ? ' partido' : ' partidos') + ' por jugar. Si lo guardas así, no se contará un campeón.';
+      const w = seriesOf(t) ? (left === 1 ? ' serie' : ' series') : (left === 1 ? ' partido' : ' partidos');
+      $('saveConfirmText').textContent = 'Faltan ' + left + w + ' por jugar. Si lo guardas así, no se contará un campeón.';
       $('saveConfirm').hidden = false; return;
     }
     saveHistory();
@@ -844,10 +1051,11 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     const complete = played === t.matches.length;
     const ref = S.db.collection('history').doc(t.id);
     const entry = {
-      date: new Date().toISOString(), tourId: t.id, players: t.players, sets: t.sets, mode: t.mode, tables: t.tables,
+      date: new Date().toISOString(), tourId: t.id, kind: t.kind || 'individual', format: t.format || null, teams: t.teams || null,
+      players: t.players, sets: t.sets, mode: t.mode, tables: t.tables,
       total: t.matches.length, played, complete,
       champion: complete && rows[0] && rows[0].pts > 0 ? rows[0].name : null,
-      standings: rows.map((r, i) => ({pos: i + 1, name: r.name, pj: r.pj, pg: r.pg, sf: r.sf, sc: r.sc, pts: r.pts}))
+      standings: rows.map((r, i) => ({pos: i + 1, name: r.name, pj: r.pj, pg: r.pg, gf: r.gf, gc: r.gc, sf: r.sf, sc: r.sc, pts: r.pts}))
     };
     $('saveTour').disabled = true;
     const ok = await write(() => ref.set(entry));
@@ -863,17 +1071,20 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     try { return new Date(iso).toLocaleDateString('es-PE', {day: '2-digit', month: '2-digit', year: 'numeric'}); } catch (e){ return iso.slice(0, 10); }
   }
   function resultsText(){
-    const t = S.tour, {rows} = computeTable(t);
-    const lines = ['Torneo de Tenis de Mesa · ' + fmtDate(t.createdAt), '', 'POSICIONES'];
-    rows.forEach((r, i) => lines.push((i + 1) + '. ' + r.name + ' · ' + r.pts + ' pts (' + r.pg + 'G ' + (r.pj - r.pg) + 'P' + (t.mode === 'scores' ? ', sets ' + r.sf + '-' + r.sc : '') + ')'));
-    lines.push('', 'PARTIDOS');
+    const t = S.tour, {rows} = computeTable(t), ser = seriesOf(t);
+    const title = 'Torneo de Tenis de Mesa' + (t.kind === 'parejas' ? ' por parejas (' + (FORMAT_LABEL[t.format] || 'Dobles') + ')' : '');
+    const lines = [title + ' · ' + fmtDate(t.createdAt), '', 'POSICIONES'];
+    rows.forEach((r, i) => lines.push((i + 1) + '. ' + r.name + ' · ' + r.pts + ' pts (' + r.pg + 'G ' + (r.pj - r.pg) + 'P' +
+      (ser ? ', partidos ' + r.gf + '-' + r.gc : '') + (t.mode === 'scores' ? ', sets ' + r.sf + '-' + r.sc : '') + ')'));
+    lines.push('', ser ? 'SERIES' : 'PARTIDOS');
     t.matches.forEach((m, i) => {
       const o = outcome(t, i);
       let txt;
       if (o.winner === null) txt = m.a + ' vs ' + m.b + ' (pendiente)';
+      else if (ser) txt = m.a + ' ' + o.ga + '-' + o.gb + ' ' + m.b;
       else if (t.mode === 'scores') txt = m.a + ' ' + o.wa + '-' + o.wb + ' ' + m.b;
       else txt = (o.winner === 0 ? m.a : m.b) + ' le ganó a ' + (o.winner === 0 ? m.b : m.a);
-      lines.push('P' + (i + 1) + ': ' + txt);
+      lines.push((ser ? 'S' : 'P') + (i + 1) + ': ' + txt);
     });
     return lines.join('\n');
   }
@@ -906,24 +1117,38 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     views.forEach(w => { $('tab-' + w).setAttribute('aria-selected', String(w === v)); $('view-' + w).hidden = w !== v; });
   }));
 
-  /* ---------- Ranking e historial ---------- */
+  /* ---------- Ranking ---------- */
+  let rankKind = 'individual';
+  ['individual', 'parejas'].forEach(k => $('rank-' + k + '-btn').addEventListener('click', () => {
+    rankKind = k;
+    $('rank-individual-btn').setAttribute('aria-pressed', String(k === 'individual'));
+    $('rank-parejas-btn').setAttribute('aria-pressed', String(k === 'parejas'));
+    renderRanking();
+  }));
+  // Una pareja es la misma sin importar el orden de sus jugadores.
+  const pairKey = name => name.split(' / ').map(key).sort().join('|');
+
   function renderRanking(){
     const agg = new Map();
-    S.history.forEach(h => (h.standings || []).forEach(r => {
-      const k = key(r.name);
+    const kOf = rankKind === 'parejas' ? pairKey : key;
+    S.history.filter(h => (h.kind || 'individual') === rankKind).forEach(h => (h.standings || []).forEach(r => {
+      const k = kOf(r.name);
       const a = agg.get(k) || {name: r.name, tj: 0, tit: 0, pj: 0, pg: 0, pts: 0};
       a.tj++; a.pj += r.pj || 0; a.pg += r.pg || 0; a.pts += r.pts || 0;
-      if (h.champion && key(h.champion) === k) a.tit++;
+      if (h.champion && kOf(h.champion) === k) a.tit++;
       agg.set(k, a);
     }));
     const rows = [...agg.values()].sort((x, y) => (y.pts - x.pts) || (y.tit - x.tit) || (y.pg - x.pg) || x.name.localeCompare(y.name, 'es'));
     const table = $('rankTable');
     table.replaceChildren();
     $('rankEmpty').hidden = rows.length > 0;
+    if (!rows.length) $('rankEmpty').textContent = rankKind === 'parejas'
+      ? 'Todavía no hay torneos por parejas guardados.'
+      : 'Todavía no hay torneos individuales guardados. Al terminar un torneo pulsa "Guardar en el historial" y aquí se sumarán los resultados.';
     table.hidden = !rows.length;
     if (!rows.length) return;
     const thead = el('thead'), hr = el('tr');
-    [['#', ''], ['Jugador', 'name'], ['TJ', ''], ['Tít', ''], ['PJ', ''], ['PG', ''], ['%V', ''], ['Pts', '']].forEach(([t, c]) => { const th = el('th', c || null, t); th.scope = 'col'; hr.append(th); });
+    [['#', ''], [rankKind === 'parejas' ? 'Pareja' : 'Jugador', 'name'], ['TJ', ''], ['Tít', ''], ['PJ', ''], ['PG', ''], ['%V', ''], ['Pts', '']].forEach(([t, c]) => { const th = el('th', c || null, t); th.scope = 'col'; hr.append(th); });
     thead.append(hr);
     const tbody = el('tbody');
     rows.forEach((r, i) => {
@@ -947,13 +1172,15 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
       const d = el('details', 'hist'); d.dataset.id = h.id; if (open.has(h.id)) d.open = true;
       const sum = el('summary');
       sum.append(el('span', 'hdate', fmtDate(h.date)));
-      const meta = (h.players || []).length + ' jugadores · ' + h.played + ' de ' + h.total + ' partidos · ' +
+      const hp = h.kind === 'parejas', hs = hp && !!SERIES[h.format];
+      const meta = (hp ? 'Parejas · ' + (FORMAT_LABEL[h.format] || 'Dobles') + ' · ' + (h.teams || []).length + ' parejas · ' : (h.players || []).length + ' jugadores · ') +
+        h.played + ' de ' + h.total + (hs ? ' series · ' : ' partidos · ') +
         (h.champion ? 'Campeón: ' + h.champion : (h.complete ? 'Sin campeón' : 'Incompleto'));
       sum.append(el('span', 'hmeta', meta));
       d.append(sum);
       const body = el('div', 'hbody');
       const tw = el('div', 'tablewrap'), tb = el('table');
-      buildTable(tb, h.standings || [], h.mode === 'scores');
+      buildTable(tb, h.standings || [], {scores: h.mode === 'scores', series: hs, pairs: hp});
       tw.append(tb); body.append(tw);
       body.append(el('p', 'legend', (h.sets === 1 ? '1 set' : h.sets + ' sets') + ' por partido · ' + (h.mode === 'scores' ? 'con marcadores' : 'resultado final') + ' · ' + h.tables + (h.tables === 1 ? ' mesa' : ' mesas')));
       d.append(body);
@@ -1029,7 +1256,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     });
     S.tour.results = merged;
     S.tour.savedId = data.savedId || S.tour.savedId || null;
-    rowRefreshers.forEach((f, i) => { if (f && !S.dirty.has(i)) f(); });
+    rowRefreshers.forEach((arr, i) => { if (arr && !S.dirty.has(i)) arr.forEach(f => f()); });
     doneMarkers.forEach((f, i) => { if (f) f(); });
     renderStandings(); renderSummary();
   }
