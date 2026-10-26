@@ -10,6 +10,20 @@ body{margin:0}
 img{max-width:100%}
 [hidden]{display:none !important}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.htop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.htitle{min-width:0;flex:1}
+.credit{display:flex;flex-direction:column;align-items:flex-end;text-align:right;flex-shrink:0;padding-top:4px;line-height:1.25}
+.credit-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.credit-name{font-size:.9rem;font-weight:700;color:var(--fg)}
+@media (max-width:420px){.credit-name{font-size:.8rem}.credit-lbl{font-size:.6rem}}
+body.proj .exitproj{top:auto !important;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.btn.danger{color:var(--err);border-color:var(--err);background:transparent}
+.btn.dangerfill{background:var(--err);border-color:var(--err);color:#ffffff}
+.hhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.hitem{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--line)}
+.hitem:first-child{border-top:0}
+.hitem details.hist{flex:1;min-width:0;border-top:0}
+.hitem > .btn{margin-top:8px;flex-shrink:0}
 .authbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem;color:var(--muted);margin-top:6px}
 .banner{background:var(--warn-bg);border:1px solid var(--warn);border-radius:8px;padding:10px 12px;font-size:.9rem}
 /* Layout: una columna de tarjetas con pestañas Torneo / Ranking / Historial; Sets y Mesas en dos columnas en pantallas anchas */
@@ -89,6 +103,22 @@ textarea:focus-visible,select:focus-visible,input:focus-visible,button:focus-vis
 .sc{width:2.4em;padding:4px 2px;text-align:center;font-variant-numeric:tabular-nums}
 .sc.bad{border-color:var(--warn);background:var(--warn-bg)}
 .mnote{flex-basis:100%;font-size:.78rem;color:var(--warn);margin:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:.82rem;font-weight:600;background:var(--card);color:var(--muted);border:0;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);color:var(--btn-fg)}
+.matches.gridview{gap:6px}
+.turn{display:flex;flex-direction:column;gap:6px;padding:4px 0 8px}
+.turnlbl{font-size:.78rem;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.mcard{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0;background:var(--card)}
+.mcard .pair{flex:none}
+.mcard.done{border-color:var(--win)}
+.mcard.free{border-style:dashed;background:transparent}
+.match.done .mnum b::after{content:" ✓";color:var(--win)}
+.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
+.mhead b{font-size:.9rem}
+.mhead span{font-size:.75rem;color:var(--muted)}
+.mcard.done .mhead b::after{content:" ✓";color:var(--win)}
 .tablewrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
@@ -124,8 +154,16 @@ body.proj td{padding:10px 8px}
 
 <div class="wrap">
   <header>
-    <h1>Torneo modalidad Todos Contra Todos</h1>
-    <p>Tenis de Mesa</p>
+    <div class="htop">
+      <div class="htitle">
+        <h1>Torneo modalidad Todos Contra Todos</h1>
+        <p>Tenis de Mesa</p>
+      </div>
+      <div class="credit">
+        <span class="credit-lbl">Autor intelectual</span>
+        <span class="credit-name">Italo Campoblanco</span>
+      </div>
+    </div>
     <div class="authbar noproj" id="authBar" hidden>
       <span id="authText"></span>
       <button class="btn sm" id="loginBtn" type="button">Iniciar sesión para anotar</button>
@@ -212,6 +250,12 @@ body.proj td{padding:10px 8px}
           <button class="btn sm" id="saveTour" type="button">Guardar en el historial</button>
           <button class="btn sm ghost" id="copyBtn" type="button">Copiar resultados</button>
           <button class="btn sm ghost" id="projBtn" type="button">Vista para proyectar</button>
+          <button class="btn sm ghost danger" id="discardBtn" type="button">Descartar torneo</button>
+        </div>
+        <div class="confirm" id="discardConfirm" hidden>
+          <span>Se borrará el torneo en curso con todos sus resultados. Si ya lo guardaste en el historial, allí se mantiene.</span>
+          <button class="btn sm dangerfill" id="discardYes" type="button">Descartar</button>
+          <button class="btn sm ghost" id="discardNo" type="button">Cancelar</button>
         </div>
         <div class="confirm" id="saveConfirm" hidden>
           <span id="saveConfirmText"></span>
@@ -222,7 +266,13 @@ body.proj td{padding:10px 8px}
       </section>
       <div id="resultsGrid" class="wrap" style="max-width:none;width:100%">
         <section class="card">
-          <h2>Partidos</h2>
+          <div class="hhead">
+            <h2>Partidos</h2>
+            <div class="seg" id="viewToggle" role="group" aria-label="Forma de ver los partidos" hidden>
+              <button type="button" id="view-mesas-btn" aria-pressed="true">Por mesas</button>
+              <button type="button" id="view-lista-btn" aria-pressed="false">Lista</button>
+            </div>
+          </div>
           <ol class="matches" id="matchList"></ol>
         </section>
         <section class="card">
@@ -244,7 +294,15 @@ body.proj td{padding:10px 8px}
 
   <!-- ============ HISTORIAL ============ -->
   <section id="view-historial" class="card" hidden>
-    <h2>Historial de torneos</h2>
+    <div class="hhead">
+      <h2>Historial de torneos</h2>
+      <button class="btn sm ghost danger" id="clearHist" type="button" hidden>Eliminar todo el historial</button>
+    </div>
+    <div class="confirm" id="clearConfirm" hidden>
+      <span id="clearConfirmText"></span>
+      <button class="btn sm dangerfill" id="clearYes" type="button">Eliminar todo</button>
+      <button class="btn sm ghost" id="clearNo" type="button">Cancelar</button>
+    </div>
     <div id="histList"></div>
     <p class="empty" id="histEmpty">Todavía no hay torneos guardados.</p>
   </section>
@@ -510,6 +568,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
 
   function commit(i, delay){
     if (S.tour.mode === 'final') refreshRow(i);
+    markDone(i);
     renderStandings(); renderSummary();
     if (!S.db || !S.canWrite) return;
     const tourId = S.tour.id;
@@ -544,31 +603,84 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     sb.textContent = t.savedId ? 'Guardado en el historial' : 'Guardar en el historial';
     sb.title = S.db ? '' : 'El guardado no está disponible en esta vista';
     sb.hidden = !S.canWrite;
+    $('discardBtn').hidden = !S.canWrite;
+    if (!S.canWrite) $('discardConfirm').hidden = true;
+  }
+
+  /* Vista de partidos: "mesas" (turnos con una columna por mesa) o "lista" */
+  let matchView = 'mesas';
+  try { matchView = localStorage.getItem('vistaPartidos') || 'mesas'; } catch (e){}
+  let doneMarkers = [];
+  function markDone(i){ const f = doneMarkers[i]; if (f) f(); }
+  ['mesas', 'lista'].forEach(v => $('view-' + v + '-btn').addEventListener('click', () => {
+    matchView = v;
+    try { localStorage.setItem('vistaPartidos', v); } catch (e){}
+    if (S.tour) renderMatches();
+  }));
+
+  function matchBody(container, m, idx){
+    if (S.tour.mode === 'final') container.append(finalControls(m, idx));
+    else {
+      const pair = el('div', 'pair');
+      pair.append(el('span', 'pname', m.a), el('span', 'vs', 'vs'), el('span', 'pname', m.b));
+      container.append(pair);
+      scoreControls(container, m, idx);
+    }
+    doneMarkers[idx] = () => container.classList.toggle('done', outcome(S.tour, idx).winner !== null);
+    markDone(idx);
   }
 
   function renderMatches(){
     const t = S.tour, list = $('matchList');
     list.replaceChildren();
-    rowRefreshers = [];
-    let lastRound = 0;
+    rowRefreshers = []; doneMarkers = [];
+    const useGrid = t.tables > 1 && matchView === 'mesas';
+    $('viewToggle').hidden = t.tables < 2;
+    $('view-mesas-btn').setAttribute('aria-pressed', String(useGrid));
+    $('view-lista-btn').setAttribute('aria-pressed', String(!useGrid));
+    list.classList.toggle('gridview', useGrid);
+
+    // Agrupar por ronda y turno
+    const rounds = [];
     t.matches.forEach((m, idx) => {
-      if (m.round !== lastRound){
-        lastRound = m.round;
-        const bye = (t.rounds[m.round - 1] || {}).bye;
-        list.append(el('li', 'rdiv', 'Ronda ' + m.round + (bye ? ' · Descansa: ' + bye : '')));
+      let r = rounds[rounds.length - 1];
+      if (!r || r.n !== m.round){ r = {n: m.round, turns: []}; rounds.push(r); }
+      let tu = r.turns[r.turns.length - 1];
+      if (!tu || tu.n !== m.turn){ tu = {n: m.turn, items: []}; r.turns.push(tu); }
+      tu.items.push({m, idx});
+    });
+
+    rounds.forEach(r => {
+      const bye = (t.rounds[r.n - 1] || {}).bye;
+      list.append(el('li', 'rdiv', 'Ronda ' + r.n + (bye ? ' · Descansa: ' + bye : '')));
+      if (useGrid){
+        r.turns.forEach(tu => {
+          const li = el('li', 'turn');
+          li.append(el('div', 'turnlbl', 'Turno ' + tu.n));
+          const grid = el('div', 'tgrid');
+          for (let k = 1; k <= t.tables; k++){
+            const it = tu.items.find(x => x.m.table === k);
+            if (!it){ const empty = el('div', 'mcard free'); empty.append(el('div', 'mhead', 'Mesa ' + k), el('span', 'vs', 'Mesa libre')); grid.append(empty); continue; }
+            const card = el('div', 'mcard');
+            const head = el('div', 'mhead');
+            head.append(el('b', null, 'Mesa ' + k), el('span', null, 'Partido ' + (it.idx + 1)));
+            card.append(head);
+            matchBody(card, it.m, it.idx);
+            grid.append(card);
+          }
+          li.append(grid);
+          list.append(li);
+        });
+      } else {
+        r.turns.forEach(tu => tu.items.forEach(({m, idx}) => {
+          const li = el('li', 'match');
+          const num = el('div', 'mnum');
+          num.append(el('b', null, 'Partido ' + (idx + 1)), el('span', null, 'Mesa ' + m.table + ' · Turno ' + m.turn));
+          li.append(num);
+          matchBody(li, m, idx);
+          list.append(li);
+        }));
       }
-      const li = el('li', 'match');
-      const num = el('div', 'mnum');
-      num.append(el('b', null, 'Partido ' + (idx + 1)), el('span', null, 'Mesa ' + m.table + ' · Turno ' + m.turn));
-      li.append(num);
-      if (t.mode === 'final') li.append(finalControls(m, idx));
-      else {
-        const pair = el('div', 'pair');
-        pair.append(el('span', 'pname', m.a), el('span', 'vs', 'vs'), el('span', 'pname', m.b));
-        li.append(pair);
-        scoreControls(li, m, idx);
-      }
-      list.append(li);
     });
   }
 
@@ -828,6 +940,9 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     const open = new Set([...box.querySelectorAll('details[open]')].map(d => d.dataset.id));
     box.replaceChildren();
     $('histEmpty').hidden = S.history.length > 0;
+    const canDel = S.canWrite && !!S.db;
+    $('clearHist').hidden = !canDel || !S.history.length;
+    if ($('clearHist').hidden) $('clearConfirm').hidden = true;
     S.history.forEach(h => {
       const d = el('details', 'hist'); d.dataset.id = h.id; if (open.has(h.id)) d.open = true;
       const sum = el('summary');
@@ -841,25 +956,62 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
       buildTable(tb, h.standings || [], h.mode === 'scores');
       tw.append(tb); body.append(tw);
       body.append(el('p', 'legend', (h.sets === 1 ? '1 set' : h.sets + ' sets') + ' por partido · ' + (h.mode === 'scores' ? 'con marcadores' : 'resultado final') + ' · ' + h.tables + (h.tables === 1 ? ' mesa' : ' mesas')));
-      if (S.canWrite && S.db){
-        const del = el('button', 'btn sm ghost', 'Eliminar del historial'); del.type = 'button';
-        let armed = false;
-        del.addEventListener('click', async () => {
-          if (!armed){ armed = true; del.textContent = 'Confirmar: eliminar este torneo'; setTimeout(() => { armed = false; del.textContent = 'Eliminar del historial'; }, 4000); return; }
-          del.disabled = true;
-          await write(() => S.db.collection('history').doc(h.id).delete());
-        });
-        const r = el('div', 'row'); r.append(del); body.append(r);
-      }
       d.append(body);
-      box.append(d);
+      const item = el('div', 'hitem');
+      item.append(d);
+      if (canDel){
+        const del = el('button', 'btn sm ghost danger', 'Eliminar'); del.type = 'button';
+        del.setAttribute('aria-label', 'Eliminar el torneo del ' + fmtDate(h.date));
+        let armed = false, timer = null;
+        del.addEventListener('click', async () => {
+          if (!armed){
+            armed = true; del.textContent = '¿Seguro? Toca otra vez'; del.className = 'btn sm dangerfill';
+            timer = setTimeout(() => { armed = false; del.textContent = 'Eliminar'; del.className = 'btn sm ghost danger'; }, 4000);
+            return;
+          }
+          clearTimeout(timer);
+          del.disabled = true; del.textContent = 'Eliminando…';
+          const ok = await write(() => S.db.collection('history').doc(h.id).delete());
+          if (ok) sync('Torneo eliminado del historial.');
+          else { del.disabled = false; armed = false; del.textContent = 'Eliminar'; del.className = 'btn sm ghost danger'; }
+        });
+        item.append(del);
+      }
+      box.append(item);
     });
   }
+
+  /* ---------- Eliminar todo el historial ---------- */
+  $('clearHist').addEventListener('click', () => {
+    const n = S.history.length;
+    $('clearConfirmText').textContent = 'Se eliminarán ' + n + (n === 1 ? ' torneo' : ' torneos') + ' del historial y el ranking quedará en cero. No se puede deshacer; si quieres, exporta un respaldo antes.';
+    $('clearConfirm').hidden = false;
+  });
+  $('clearNo').addEventListener('click', () => { $('clearConfirm').hidden = true; });
+  $('clearYes').addEventListener('click', async () => {
+    $('clearConfirm').hidden = true;
+    const ids = S.history.map(h => h.id);
+    const ok = await write(async () => { for (const id of ids) await S.db.collection('history').doc(id).delete(); });
+    if (ok) sync('Historial eliminado.');
+  });
+
+  /* ---------- Descartar torneo en curso ---------- */
+  $('discardBtn').addEventListener('click', () => { $('discardConfirm').hidden = false; });
+  $('discardNo').addEventListener('click', () => { $('discardConfirm').hidden = true; });
+  $('discardYes').addEventListener('click', async () => {
+    $('discardConfirm').hidden = true;
+    S.dirty.forEach(t => clearTimeout(t)); S.dirty.clear();
+    S.tour = null;
+    renderTour();
+    if (S.db) { const ok = await write(() => S.db.doc('club/current').delete()); if (ok) sync('Torneo descartado.'); }
+    window.scrollTo(0, 0);
+  });
 
   /* ---------- Conexión con la base de datos ---------- */
   function applyCurrent(data){
     if (!data || !Array.isArray(data.matches) || !data.matches.length){
-      if (S.tour && S.db) { /* torneo local aún no confirmado: no borrar */ }
+      // El torneo en curso fue descartado (aquí o en otro dispositivo).
+      if (S.tour && S.db && !S.dirty.size){ S.tour = null; renderTour(); }
       return;
     }
     if (!S.tour || S.tour.id !== data.id){
@@ -878,6 +1030,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
     S.tour.results = merged;
     S.tour.savedId = data.savedId || S.tour.savedId || null;
     rowRefreshers.forEach((f, i) => { if (f && !S.dirty.has(i)) f(); });
+    doneMarkers.forEach((f, i) => { if (f) f(); });
     renderStandings(); renderSummary();
   }
 
